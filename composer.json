@@ -1,0 +1,70 @@
+{
+    "name": "builtbyberry/laravel-swarm-memory-vector",
+    "description": "Vector-backed memory driver for Laravel Swarm — semantic recall via pgvector and Laravel AI embeddings. Implements the MemoryStore contract from laravel-swarm.",
+    "keywords": ["laravel", "ai", "agents", "swarm", "memory", "vector", "pgvector", "embeddings", "semantic-search"],
+    "homepage": "https://swarm.builtbyberry.com",
+    "support": {
+        "docs": "https://swarm.builtbyberry.com",
+        "issues": "https://github.com/builtbyberry/laravel-swarm-memory-vector/issues",
+        "source": "https://github.com/builtbyberry/laravel-swarm-memory-vector"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Daniel Berry",
+            "email": "daniel@jstreetdigital.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.5",
+        "builtbyberry/laravel-swarm": "^0.23",
+        "illuminate/console": "^13.0",
+        "illuminate/contracts": "^13.0",
+        "illuminate/database": "^13.0",
+        "illuminate/support": "^13.0",
+        "laravel/ai": "^0.9",
+        "spatie/laravel-package-tools": "^1.16"
+    },
+    "require-dev": {
+        "larastan/larastan": "^3.10",
+        "laravel/pint": "^1.29",
+        "orchestra/testbench": "^11.1",
+        "pestphp/pest": "^4.7",
+        "pestphp/pest-plugin-laravel": "^4.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "BuiltByBerry\\LaravelSwarmMemoryVector\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "BuiltByBerry\\LaravelSwarmMemoryVector\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.1.x-dev"
+        },
+        "laravel": {
+            "providers": [
+                "BuiltByBerry\\LaravelSwarmMemoryVector\\SwarmMemoryVectorServiceProvider"
+            ]
+        }
+    },
+    "scripts": {
+        "analyse": "vendor/bin/phpstan analyse --memory-limit=2G --no-progress",
+        "format": "vendor/bin/pint",
+        "lint": "vendor/bin/pint --test",
+        "test": "vendor/bin/pest tests/Feature"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

@@ -1,0 +1,4 @@
+providers:
+  - Laravel\Ai\AiServiceProvider
+  - BuiltByBerry\LaravelSwarm\SwarmServiceProvider
+  - BuiltByBerry\LaravelSwarmMemoryVector\SwarmMemoryVectorServiceProvider

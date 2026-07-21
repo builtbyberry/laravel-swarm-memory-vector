@@ -1,0 +1,91 @@
+name: tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  tests:
+    name: PHP 8.5 - Laravel 13 - ${{ matrix.dependency-version }} (scan)
+    runs-on: ubuntu-24.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - dependency-version: prefer-stable
+            composer-flags: '--prefer-stable'
+          - dependency-version: prefer-lowest
+            composer-flags: '--prefer-lowest --prefer-stable'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          tools: composer:v2
+          ini-values: memory_limit=1G
+
+      - name: Install dependencies
+        run: composer update ${{ matrix.composer-flags }} --prefer-dist --no-interaction --no-progress
+
+      - name: Execute tests
+        run: composer test
+
+      - name: Execute static analysis
+        if: matrix.dependency-version == 'prefer-stable'
+        run: composer analyse
+
+      - name: Execute code style check
+        if: matrix.dependency-version == 'prefer-stable'
+        run: composer lint
+
+  pgvector:
+    name: PHP 8.5 - pgvector (Postgres)
+    runs-on: ubuntu-24.04
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: swarm
+          POSTGRES_PASSWORD: swarm
+          POSTGRES_DB: swarm_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U swarm"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: swarm_test
+      DB_USERNAME: swarm
+      DB_PASSWORD: swarm
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_pgsql
+          tools: composer:v2
+          ini-values: memory_limit=1G
+
+      - name: Install dependencies
+        run: composer update --prefer-stable --prefer-dist --no-interaction --no-progress
+
+      - name: Execute tests against native pgvector
+        run: composer test
