@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- **Widened the `builtbyberry/laravel-swarm` constraint from `^0.23` to
+  `^0.20 || ^0.21 || ^0.22 || ^0.23 || ^0.24`.** The single-minor pin meant
+  Composer refused to install this package alongside any core release other than
+  0.23 — including the next one — so a core upgrade silently made vector memory
+  uninstallable rather than reporting an incompatibility.
+
+  The companion's `laravel/ai` constraint is widened alongside core, from `^0.9`
+  to `^0.9 || ^0.10.3`, because Laravel Swarm v0.24.0 requires Laravel AI
+  v0.10.3 or newer in that minor line.
+
+  The range is verified, not assumed: this package's suite (29 tests) was run
+  against core v0.20.0, v0.21.0, v0.22.0, v0.23.0 and the published v0.24.0
+  release, passing on all five. The floor is v0.20.0 because that is the earliest
+  core release requiring Laravel AI v0.9; core v0.19.0 and earlier pin v0.8 and
+  cannot co-resolve with this package's supported Laravel AI range.
+
+  Nothing about the integration changed. This package decorates the `MemoryStore`
+  contract, whose four methods are byte-identical across v0.20.0–v0.24.0, and it
+  touches no core table directly.
+
 All notable changes to `builtbyberry/laravel-swarm-memory-vector` are documented here.
 
 ## v0.1.0 - 2026-07-20
