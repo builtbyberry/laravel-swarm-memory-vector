@@ -8,7 +8,7 @@ Vector-backed semantic recall for [Laravel Swarm](https://github.com/builtbyberr
 
 - PHP 8.5+
 - [`builtbyberry/laravel-swarm`](https://github.com/builtbyberry/laravel-swarm) ^0.20 – ^0.24
-- [`laravel/ai`](https://github.com/laravel/ai) ^0.9 (for embeddings)
+- [`laravel/ai`](https://github.com/laravel/ai) ^0.9 or ^0.10.3 (for embeddings)
 - For the native `pgvector` driver: a PostgreSQL connection with the `vector` extension available
 
 ## Installation
