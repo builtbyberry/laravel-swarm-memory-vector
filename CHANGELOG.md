@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.1.3 - 2026-09-03
+
+### Changed
+
+- Supports PHP `^8.4`, with CI covering PHP 8.4 and 8.5 against latest and
+  lowest dependency sets. The vector-memory behavior and supported Laravel
+  Swarm `^0.20` through `^0.25` range are unchanged.
+
 ## v0.1.2 - 2026-09-02
 
 ### Changed

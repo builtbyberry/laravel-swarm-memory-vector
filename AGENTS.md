@@ -30,4 +30,6 @@ composer lint      # Pint (--test); `composer format` to fix
 
 - Tests bind a deterministic `HashEmbedder` (no network). Reader tests enter an `ActiveRunContext` frame with a `FakeSwarm` fixture and `RunContext::fake()`.
 - sqlite runs with `foreign_key_constraints => false` (matching core memory tests: a Run-scoped entry has a `run_id` FK these unit tests do not seed).
-- CI runs the suite twice: sqlite (scan driver) and a real pgvector PostgreSQL service (native driver).
+- CI runs four scan-driver lanes: PHP 8.4 and 8.5, each against latest and
+  lowest dependencies. It also runs the native pgvector suite against a real
+  PostgreSQL service on the minimum supported runtime, PHP 8.4.

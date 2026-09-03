@@ -17,7 +17,7 @@
         }
     ],
     "require": {
-        "php": "^8.5",
+        "php": "^8.4",
         "builtbyberry/laravel-swarm": "^0.20 || ^0.21 || ^0.22 || ^0.23 || ^0.24 || ^0.25",
         "illuminate/console": "^13.0",
         "illuminate/contracts": "^13.0",
