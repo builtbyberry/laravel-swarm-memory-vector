@@ -1,5 +1,8 @@
 name: tests
 
+permissions:
+  contents: read
+
 on:
   push:
     branches:
@@ -8,45 +11,117 @@ on:
 
 jobs:
   tests:
-    name: PHP 8.5 - Laravel 13 - ${{ matrix.dependency-version }} (scan)
+    name: PHP ${{ matrix.php }} - Laravel 13 - ${{ matrix.dependencies }} (scan)
     runs-on: ubuntu-24.04
 
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - dependency-version: prefer-stable
-            composer-flags: '--prefer-stable'
-          - dependency-version: prefer-lowest
-            composer-flags: '--prefer-lowest --prefer-stable'
+        php:
+          - '8.4'
+          - '8.5'
+        dependencies:
+          - stable-latest
+          - lowest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.5'
+          php-version: ${{ matrix.php }}
           tools: composer:v2
           ini-values: memory_limit=1G
 
+      - name: Bootstrap the pre-tag PHP 8.4 core candidate
+        if: matrix.php == '8.4'
+        shell: bash
+        run: |
+          # Before core v0.25.0 reaches Packagist, prove this companion against
+          # the immutable reviewed release commit. Removal is owned by
+          # builtbyberry/laravel-swarm#493 once the stable core is available.
+          metadata=$(curl --fail-with-body --silent --show-error \
+            https://repo.packagist.org/p2/builtbyberry/laravel-swarm.json)
+
+          if php -r '
+            try {
+                $metadata = json_decode(stream_get_contents(STDIN), true, 512, JSON_THROW_ON_ERROR);
+            } catch (Throwable $exception) {
+                fwrite(STDERR, "Invalid Packagist metadata: {$exception->getMessage()}\n");
+                exit(2);
+            }
+
+            $packages = $metadata["packages"]["builtbyberry/laravel-swarm"] ?? null;
+            if (! is_array($packages)) {
+                fwrite(STDERR, "Packagist metadata is missing the Laravel Swarm package list.\n");
+                exit(2);
+            }
+
+            foreach ($packages as $package) {
+                if (($package["version_normalized"] ?? null) === "0.25.0.0") {
+                    exit(0);
+                }
+            }
+
+            exit(1);
+          ' <<< "$metadata"; then
+            echo "Laravel Swarm v0.25.0 is available from Packagist; VCS bootstrap skipped."
+          else
+            probe_status=$?
+            if [ "$probe_status" -ne 1 ]; then
+              exit "$probe_status"
+            fi
+
+            composer config repositories.swarm-vcs vcs https://github.com/builtbyberry/laravel-swarm.git
+            composer require --no-update "builtbyberry/laravel-swarm:dev-release/v0.25.0#97bf2267ca347ce3886c81c9d72d3e6ac05ddb89 as 0.25.x-dev"
+            echo "SWARM_CORE_EXPECTED_REFERENCE=97bf2267ca347ce3886c81c9d72d3e6ac05ddb89" >> "$GITHUB_ENV"
+          fi
+
       - name: Install dependencies
-        run: composer update ${{ matrix.composer-flags }} --prefer-dist --no-interaction --no-progress
+        if: matrix.dependencies == 'stable-latest'
+        run: composer update --prefer-stable --prefer-dist --no-interaction --no-progress
+
+      - name: Install lowest dependencies
+        if: matrix.dependencies == 'lowest'
+        run: composer update --prefer-lowest --prefer-stable --prefer-dist --no-interaction --no-progress
+
+      - name: Verify installed Laravel Swarm reference
+        if: matrix.php == '8.4'
+        shell: bash
+        run: |
+          reference=$(composer show builtbyberry/laravel-swarm --format=json | php -r '
+            $package = json_decode(stream_get_contents(STDIN), true, 512, JSON_THROW_ON_ERROR);
+            $reference = $package["source"]["reference"] ?? null;
+            if (! is_string($reference) || $reference === "") {
+                fwrite(STDERR, "Installed Laravel Swarm has no source.reference.\n");
+                exit(1);
+            }
+            echo $reference;
+          ')
+          echo "Installed Laravel Swarm source.reference: $reference"
+
+          if [ -n "${SWARM_CORE_EXPECTED_REFERENCE:-}" ] && [ "$reference" != "$SWARM_CORE_EXPECTED_REFERENCE" ]; then
+            echo "Expected Laravel Swarm source.reference $SWARM_CORE_EXPECTED_REFERENCE" >&2
+            exit 1
+          fi
 
       - name: Execute tests
         run: composer test
 
       - name: Execute static analysis
-        if: matrix.dependency-version == 'prefer-stable'
+        if: matrix.dependencies == 'stable-latest'
         run: composer analyse
 
       - name: Execute code style check
-        if: matrix.dependency-version == 'prefer-stable'
+        if: matrix.dependencies == 'stable-latest'
         run: composer lint
 
   pgvector:
-    name: PHP 8.5 - pgvector (Postgres)
+    name: PHP 8.4 - pgvector (Postgres)
     runs-on: ubuntu-24.04
 
     services:
@@ -75,17 +150,81 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.5'
+          php-version: '8.4'
           extensions: pdo_pgsql
           tools: composer:v2
           ini-values: memory_limit=1G
 
+      - name: Bootstrap the pre-tag PHP 8.4 core candidate
+        shell: bash
+        run: |
+          # Before core v0.25.0 reaches Packagist, prove this companion against
+          # the immutable reviewed release commit. Removal is owned by
+          # builtbyberry/laravel-swarm#493 once the stable core is available.
+          metadata=$(curl --fail-with-body --silent --show-error \
+            https://repo.packagist.org/p2/builtbyberry/laravel-swarm.json)
+
+          if php -r '
+            try {
+                $metadata = json_decode(stream_get_contents(STDIN), true, 512, JSON_THROW_ON_ERROR);
+            } catch (Throwable $exception) {
+                fwrite(STDERR, "Invalid Packagist metadata: {$exception->getMessage()}\n");
+                exit(2);
+            }
+
+            $packages = $metadata["packages"]["builtbyberry/laravel-swarm"] ?? null;
+            if (! is_array($packages)) {
+                fwrite(STDERR, "Packagist metadata is missing the Laravel Swarm package list.\n");
+                exit(2);
+            }
+
+            foreach ($packages as $package) {
+                if (($package["version_normalized"] ?? null) === "0.25.0.0") {
+                    exit(0);
+                }
+            }
+
+            exit(1);
+          ' <<< "$metadata"; then
+            echo "Laravel Swarm v0.25.0 is available from Packagist; VCS bootstrap skipped."
+          else
+            probe_status=$?
+            if [ "$probe_status" -ne 1 ]; then
+              exit "$probe_status"
+            fi
+
+            composer config repositories.swarm-vcs vcs https://github.com/builtbyberry/laravel-swarm.git
+            composer require --no-update "builtbyberry/laravel-swarm:dev-release/v0.25.0#97bf2267ca347ce3886c81c9d72d3e6ac05ddb89 as 0.25.x-dev"
+            echo "SWARM_CORE_EXPECTED_REFERENCE=97bf2267ca347ce3886c81c9d72d3e6ac05ddb89" >> "$GITHUB_ENV"
+          fi
+
       - name: Install dependencies
         run: composer update --prefer-stable --prefer-dist --no-interaction --no-progress
+
+      - name: Verify installed Laravel Swarm reference
+        shell: bash
+        run: |
+          reference=$(composer show builtbyberry/laravel-swarm --format=json | php -r '
+            $package = json_decode(stream_get_contents(STDIN), true, 512, JSON_THROW_ON_ERROR);
+            $reference = $package["source"]["reference"] ?? null;
+            if (! is_string($reference) || $reference === "") {
+                fwrite(STDERR, "Installed Laravel Swarm has no source.reference.\n");
+                exit(1);
+            }
+            echo $reference;
+          ')
+          echo "Installed Laravel Swarm source.reference: $reference"
+
+          if [ -n "${SWARM_CORE_EXPECTED_REFERENCE:-}" ] && [ "$reference" != "$SWARM_CORE_EXPECTED_REFERENCE" ]; then
+            echo "Expected Laravel Swarm source.reference $SWARM_CORE_EXPECTED_REFERENCE" >&2
+            exit 1
+          fi
 
       - name: Execute tests against native pgvector
         run: composer test
