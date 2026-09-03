@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.1.2 - 2026-09-02
+
+### Changed
+
+- **Extended the verified Laravel Swarm range through `^0.25`.** The v0.25
+  release keeps the same `MemoryStore` contract and Laravel AI `^0.10.3` line as
+  v0.24, so the companion requires no integration-code change. Its full suite
+  passes against the exact v0.25 release branch in addition to every supported
+  published core line from v0.20 through v0.24.
+
 ## v0.1.1 - 2026-09-02
 
 ### Changed
