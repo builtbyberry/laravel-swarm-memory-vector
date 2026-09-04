@@ -37,50 +37,6 @@ jobs:
           tools: composer:v2
           ini-values: memory_limit=1G
 
-      - name: Bootstrap the pre-tag PHP 8.4 core candidate
-        if: matrix.php == '8.4'
-        shell: bash
-        run: |
-          # Before core v0.25.0 reaches Packagist, prove this companion against
-          # the immutable reviewed release commit. Removal is owned by
-          # builtbyberry/laravel-swarm#493 once the stable core is available.
-          metadata=$(curl --fail-with-body --silent --show-error \
-            https://repo.packagist.org/p2/builtbyberry/laravel-swarm.json)
-
-          if php -r '
-            try {
-                $metadata = json_decode(stream_get_contents(STDIN), true, 512, JSON_THROW_ON_ERROR);
-            } catch (Throwable $exception) {
-                fwrite(STDERR, "Invalid Packagist metadata: {$exception->getMessage()}\n");
-                exit(2);
-            }
-
-            $packages = $metadata["packages"]["builtbyberry/laravel-swarm"] ?? null;
-            if (! is_array($packages)) {
-                fwrite(STDERR, "Packagist metadata is missing the Laravel Swarm package list.\n");
-                exit(2);
-            }
-
-            foreach ($packages as $package) {
-                if (($package["version_normalized"] ?? null) === "0.25.0.0") {
-                    exit(0);
-                }
-            }
-
-            exit(1);
-          ' <<< "$metadata"; then
-            echo "Laravel Swarm v0.25.0 is available from Packagist; VCS bootstrap skipped."
-          else
-            probe_status=$?
-            if [ "$probe_status" -ne 1 ]; then
-              exit "$probe_status"
-            fi
-
-            composer config repositories.swarm-vcs vcs https://github.com/builtbyberry/laravel-swarm.git
-            composer require --no-update "builtbyberry/laravel-swarm:dev-release/v0.25.0#97bf2267ca347ce3886c81c9d72d3e6ac05ddb89 as 0.25.x-dev"
-            echo "SWARM_CORE_EXPECTED_REFERENCE=97bf2267ca347ce3886c81c9d72d3e6ac05ddb89" >> "$GITHUB_ENV"
-          fi
-
       - name: Install dependencies
         if: matrix.dependencies == 'stable-latest'
         run: composer update --prefer-stable --prefer-dist --no-interaction --no-progress
@@ -89,25 +45,27 @@ jobs:
         if: matrix.dependencies == 'lowest'
         run: composer update --prefer-lowest --prefer-stable --prefer-dist --no-interaction --no-progress
 
-      - name: Verify installed Laravel Swarm reference
-        if: matrix.php == '8.4'
+      - name: Verify published Laravel Swarm release
+        if: matrix.dependencies == 'stable-latest'
         shell: bash
         run: |
-          reference=$(composer show builtbyberry/laravel-swarm --format=json | php -r '
+          composer show builtbyberry/laravel-swarm --format=json | php -r '
             $package = json_decode(stream_get_contents(STDIN), true, 512, JSON_THROW_ON_ERROR);
-            $reference = $package["source"]["reference"] ?? null;
-            if (! is_string($reference) || $reference === "") {
-                fwrite(STDERR, "Installed Laravel Swarm has no source.reference.\n");
+            $versions = $package["versions"] ?? [];
+            if (! in_array("v0.25.0", $versions, true)) {
+                fwrite(STDERR, "Expected published Laravel Swarm v0.25.0.\n");
                 exit(1);
             }
-            echo $reference;
-          ')
-          echo "Installed Laravel Swarm source.reference: $reference"
 
-          if [ -n "${SWARM_CORE_EXPECTED_REFERENCE:-}" ] && [ "$reference" != "$SWARM_CORE_EXPECTED_REFERENCE" ]; then
-            echo "Expected Laravel Swarm source.reference $SWARM_CORE_EXPECTED_REFERENCE" >&2
-            exit 1
-          fi
+            $reference = $package["source"]["reference"] ?? null;
+            $expectedReference = "be7df78e8fde12362cfff9007cfe723d572a5e4f";
+            if ($reference !== $expectedReference) {
+                fwrite(STDERR, "Expected Laravel Swarm source.reference {$expectedReference}; got ".var_export($reference, true).".\n");
+                exit(1);
+            }
+
+            echo "Installed published Laravel Swarm v0.25.0 at {$reference}.\n";
+          '
 
       - name: Execute tests
         run: composer test
@@ -161,70 +119,29 @@ jobs:
           tools: composer:v2
           ini-values: memory_limit=1G
 
-      - name: Bootstrap the pre-tag PHP 8.4 core candidate
-        shell: bash
-        run: |
-          # Before core v0.25.0 reaches Packagist, prove this companion against
-          # the immutable reviewed release commit. Removal is owned by
-          # builtbyberry/laravel-swarm#493 once the stable core is available.
-          metadata=$(curl --fail-with-body --silent --show-error \
-            https://repo.packagist.org/p2/builtbyberry/laravel-swarm.json)
-
-          if php -r '
-            try {
-                $metadata = json_decode(stream_get_contents(STDIN), true, 512, JSON_THROW_ON_ERROR);
-            } catch (Throwable $exception) {
-                fwrite(STDERR, "Invalid Packagist metadata: {$exception->getMessage()}\n");
-                exit(2);
-            }
-
-            $packages = $metadata["packages"]["builtbyberry/laravel-swarm"] ?? null;
-            if (! is_array($packages)) {
-                fwrite(STDERR, "Packagist metadata is missing the Laravel Swarm package list.\n");
-                exit(2);
-            }
-
-            foreach ($packages as $package) {
-                if (($package["version_normalized"] ?? null) === "0.25.0.0") {
-                    exit(0);
-                }
-            }
-
-            exit(1);
-          ' <<< "$metadata"; then
-            echo "Laravel Swarm v0.25.0 is available from Packagist; VCS bootstrap skipped."
-          else
-            probe_status=$?
-            if [ "$probe_status" -ne 1 ]; then
-              exit "$probe_status"
-            fi
-
-            composer config repositories.swarm-vcs vcs https://github.com/builtbyberry/laravel-swarm.git
-            composer require --no-update "builtbyberry/laravel-swarm:dev-release/v0.25.0#97bf2267ca347ce3886c81c9d72d3e6ac05ddb89 as 0.25.x-dev"
-            echo "SWARM_CORE_EXPECTED_REFERENCE=97bf2267ca347ce3886c81c9d72d3e6ac05ddb89" >> "$GITHUB_ENV"
-          fi
-
       - name: Install dependencies
         run: composer update --prefer-stable --prefer-dist --no-interaction --no-progress
 
-      - name: Verify installed Laravel Swarm reference
+      - name: Verify published Laravel Swarm release
         shell: bash
         run: |
-          reference=$(composer show builtbyberry/laravel-swarm --format=json | php -r '
+          composer show builtbyberry/laravel-swarm --format=json | php -r '
             $package = json_decode(stream_get_contents(STDIN), true, 512, JSON_THROW_ON_ERROR);
-            $reference = $package["source"]["reference"] ?? null;
-            if (! is_string($reference) || $reference === "") {
-                fwrite(STDERR, "Installed Laravel Swarm has no source.reference.\n");
+            $versions = $package["versions"] ?? [];
+            if (! in_array("v0.25.0", $versions, true)) {
+                fwrite(STDERR, "Expected published Laravel Swarm v0.25.0.\n");
                 exit(1);
             }
-            echo $reference;
-          ')
-          echo "Installed Laravel Swarm source.reference: $reference"
 
-          if [ -n "${SWARM_CORE_EXPECTED_REFERENCE:-}" ] && [ "$reference" != "$SWARM_CORE_EXPECTED_REFERENCE" ]; then
-            echo "Expected Laravel Swarm source.reference $SWARM_CORE_EXPECTED_REFERENCE" >&2
-            exit 1
-          fi
+            $reference = $package["source"]["reference"] ?? null;
+            $expectedReference = "be7df78e8fde12362cfff9007cfe723d572a5e4f";
+            if ($reference !== $expectedReference) {
+                fwrite(STDERR, "Expected Laravel Swarm source.reference {$expectedReference}; got ".var_export($reference, true).".\n");
+                exit(1);
+            }
+
+            echo "Installed published Laravel Swarm v0.25.0 at {$reference}.\n";
+          '
 
       - name: Execute tests against native pgvector
         run: composer test
