@@ -12,12 +12,13 @@ const PUBLISHED_REF = 'be7df78e8fde12362cfff9007cfe723d572a5e4f';
 const AI_MINIMUM_REF = 'ee2c5162838d440c4e2e629ea93c8c87e838eaed';
 const CORE_RANGE = '^0.20 || ^0.21 || ^0.22 || ^0.23 || ^0.24 || ^0.25 || ^0.26';
 const AI_RANGE = '^0.9 || ^0.10.3 || ^0.11.2';
+// Published source commits, peeled from annotated tags where applicable.
 const LEGACY_REFS = [
     '0.20' => '8a6fe26cf6222c04d481bab085212d75b8bf174b',
-    '0.21' => 'b518386f8e0ac33bd03367ace746dd5abe8cc8ee',
-    '0.22' => '6643621469e120752789f4db6b162538a0033325',
-    '0.23' => '29bacf6331ea3bc95acf00b4d7ee105b700e0b01',
-    '0.24' => 'b8ff3aece7541fb038d25fe04b99664dce8a50ee',
+    '0.21' => 'b49c50c161433eaf03598de64e49d1ca4b8d0257',
+    '0.22' => '315b654e0f4b65e09389537607b5ce7e9038ec8a',
+    '0.23' => 'e3ca8b30af3b50592b2f15e1cc1130ecddad66fb',
+    '0.24' => '499d518b60d9a12816556c0b2bd748e6f7b1ed14',
 ];
 const LANES = ['lowest', 'published-0.25', 'adoption-minimum', 'adoption-current', 'legacy-0.20', 'legacy-0.21', 'legacy-0.22', 'legacy-0.23', 'legacy-0.24'];
 
