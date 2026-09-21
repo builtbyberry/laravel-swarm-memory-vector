@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Extend core compatibility through `^0.26` and Laravel AI through `^0.11.2`,
+  preserving core `^0.20`–`^0.25` and AI `^0.9 || ^0.10.3`.
+- Exercise the pinned core 0.26 candidate with minimum and current AI 0.11
+  dependencies on PHP 8.4/8.5 scan and PHP 8.4 native PostgreSQL/pgvector,
+  alongside the published 0.25 baseline, lowest dependencies, and explicit
+  published core 0.20–0.24 scan lanes. Verify installed/locked dependency
+  provenance with negative controls. Candidate metadata is temporary CI input;
+  it does not establish published ecosystem installability. This retains old
+  consumer ranges instead of forcing all applications onto core 0.26.
+
 ## v0.1.3 - 2026-09-03
 
 ### Changed

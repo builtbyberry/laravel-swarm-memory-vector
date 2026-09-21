@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use BuiltByBerry\LaravelSwarm\Enums\MemoryScope;
 use BuiltByBerry\LaravelSwarmMemoryVector\Contracts\VectorIndex;
+use BuiltByBerry\LaravelSwarmMemoryVector\Index\PgVectorIndex;
+use BuiltByBerry\LaravelSwarmMemoryVector\Index\ScanVectorIndex;
 use BuiltByBerry\LaravelSwarmMemoryVector\Tests\TestCase;
 use Illuminate\Support\Facades\DB;
 
@@ -36,6 +38,19 @@ function index(): VectorIndex
 {
     return app(VectorIndex::class);
 }
+
+test('it uses the native index for the configured database', function () {
+    $postgres = env('DB_CONNECTION') === 'pgsql';
+
+    expect(DB::connection()->getDriverName())->toBe($postgres ? 'pgsql' : 'sqlite');
+    expect(index())->toBeInstanceOf($postgres ? PgVectorIndex::class : ScanVectorIndex::class);
+
+    if ($postgres) {
+        $column = DB::selectOne("select udt_name from information_schema.columns where table_schema = current_schema() and table_name = 'swarm_memory_vectors' and column_name = 'embedding'");
+
+        expect($column?->udt_name)->toBe('vector');
+    }
+});
 
 test('it ranks candidate keys by similarity, most similar first', function () {
     index()->upsert(MemoryScope::Run, 'run-1', 'apple', vec([0 => 1.0]));
