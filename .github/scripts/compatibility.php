@@ -7,20 +7,11 @@ namespace VectorCompatibility;
 use Composer\Semver\Semver;
 
 const CORE = 'builtbyberry/laravel-swarm';
-const CANDIDATE_REF = 'e25842cab4291837dcce2ff6f4815e58feab9079';
-const PUBLISHED_REF = 'be7df78e8fde12362cfff9007cfe723d572a5e4f';
-const AI_MINIMUM_REF = 'ee2c5162838d440c4e2e629ea93c8c87e838eaed';
-const CORE_RANGE = '^0.20 || ^0.21 || ^0.22 || ^0.23 || ^0.24 || ^0.25 || ^0.26';
-const AI_RANGE = '^0.9 || ^0.10.3 || ^0.11.2';
-// Published source commits, peeled from annotated tags where applicable.
-const LEGACY_REFS = [
-    '0.20' => '8a6fe26cf6222c04d481bab085212d75b8bf174b',
-    '0.21' => 'b49c50c161433eaf03598de64e49d1ca4b8d0257',
-    '0.22' => '315b654e0f4b65e09389537607b5ce7e9038ec8a',
-    '0.23' => 'e3ca8b30af3b50592b2f15e1cc1130ecddad66fb',
-    '0.24' => '499d518b60d9a12816556c0b2bd748e6f7b1ed14',
-];
-const LANES = ['lowest', 'published-0.25', 'adoption-minimum', 'adoption-current', 'legacy-0.20', 'legacy-0.21', 'legacy-0.22', 'legacy-0.23', 'legacy-0.24'];
+const CANDIDATE_REF = '48ad4ef690363ca40ba7d3bd50e63e7fbe76ba4b';
+const AI_MINIMUM_REF = '101c7ea33cd8569d82570f753fbf38e48b7d3d95';
+const CORE_RANGE = '^0.27';
+const AI_RANGE = '^1.0';
+const LANES = ['adoption-minimum', 'adoption-current'];
 
 function check(bool $condition, string $message): void
 {
@@ -39,22 +30,20 @@ function prepare(array $root, string $lane, ?array $candidate): array
     check(in_array($lane, LANES, true), 'Unknown compatibility lane.');
     check(($root['require'][CORE] ?? null) === CORE_RANGE, 'Keep the complete supported core range.');
     check(($root['require']['laravel/ai'] ?? null) === AI_RANGE, 'Keep the complete supported AI range.');
-    if (str_starts_with($lane, 'legacy-')) {
-        $root['require'][CORE] = substr($lane, 7).'.0';
-    } elseif ($lane === 'published-0.25') {
-        $root['require'][CORE] = '0.25.0';
-    } elseif (str_starts_with($lane, 'adoption-')) {
-        check(($candidate['name'] ?? null) === CORE, 'Expected the official core candidate manifest.');
-        check(($candidate['require']['laravel/ai'] ?? null) === '^0.11.2', 'Unexpected candidate AI contract.');
-        // This synthetic version is CI-only: the source and archive are immutable.
-        $candidate['version'] = '0.26.0';
-        $candidate['source'] = ['type' => 'git', 'url' => 'https://github.com/builtbyberry/laravel-swarm.git', 'reference' => CANDIDATE_REF];
-        $candidate['dist'] = ['type' => 'zip', 'url' => 'https://api.github.com/repos/builtbyberry/laravel-swarm/zipball/'.CANDIDATE_REF, 'reference' => CANDIDATE_REF];
-        unset($candidate['require-dev'], $candidate['scripts'], $candidate['repositories']);
-        $root['repositories'] = [['type' => 'package', 'package' => $candidate]];
-        $root['require'][CORE] = '0.26.0';
-        $root['require']['laravel/ai'] = $lane === 'adoption-minimum' ? '0.11.2' : '^0.11.2';
+    check(! isset($root['repositories']) && ! isset($root['replace']), 'Production manifest must not override package provenance.');
+    foreach ($root['require'] as $constraint) {
+        check(! str_contains($constraint, ' as '), 'Production dependencies must not use version aliases.');
     }
+    check(($candidate['name'] ?? null) === CORE, 'Expected the official core candidate manifest.');
+    check(($candidate['require']['laravel/ai'] ?? null) === AI_RANGE, 'Unexpected candidate AI contract.');
+    // This synthetic version is CI-only: the source and archive are immutable.
+    $candidate['version'] = '0.27.0';
+    $candidate['source'] = ['type' => 'git', 'url' => 'https://github.com/builtbyberry/laravel-swarm.git', 'reference' => CANDIDATE_REF];
+    $candidate['dist'] = ['type' => 'zip', 'url' => 'https://api.github.com/repos/builtbyberry/laravel-swarm/zipball/'.CANDIDATE_REF, 'reference' => CANDIDATE_REF];
+    unset($candidate['require-dev'], $candidate['scripts'], $candidate['repositories']);
+    $root['repositories'] = [['type' => 'package', 'package' => $candidate]];
+    $root['require'][CORE] = '0.27.0';
+    $root['require']['laravel/ai'] = $lane === 'adoption-minimum' ? '1.0.0' : AI_RANGE;
 
     return $root;
 }
@@ -67,7 +56,6 @@ function packages(array $packages): array
 function verify(array $locked, array $installed, string $lane): array
 {
     check(in_array($lane, LANES, true), 'Unknown compatibility lane.');
-    $adoption = str_starts_with($lane, 'adoption-');
     $evidence = [];
     foreach ([CORE, 'laravel/ai', 'laravel/framework'] as $name) {
         $lock = $locked[$name] ?? [];
@@ -86,19 +74,12 @@ function verify(array $locked, array $installed, string $lane): array
             && ($actual['dist']['reference'] ?? null) === $ref
             && ($actual['dist']['url'] ?? null) === "https://api.github.com/repos/{$repository}/zipball/{$ref}", "{$name}: expected matching official archive.");
         if ($name === CORE) {
-            if ($adoption || $lane === 'published-0.25') {
-                check($version === ($adoption ? '0.26.0' : '0.25.0'), 'Wrong core version for lane.');
-                check($ref === ($adoption ? CANDIDATE_REF : PUBLISHED_REF), 'Wrong core source for lane.');
-            } elseif (str_starts_with($lane, 'legacy-')) {
-                $minor = substr($lane, 7);
-                check($version === $minor.'.0' && $ref === LEGACY_REFS[$minor], 'Wrong published legacy core.');
-            } else {
-                check((bool) preg_match('/^0\.(20|21|22|23|24|25)\./', $version), 'Lowest lane must retain a supported pre-0.26 core.');
-            }
-        } elseif ($name === 'laravel/ai' && $adoption) {
-            check(version_compare($version, '0.11.2', '>=') && version_compare($version, '0.12.0', '<'), 'Expected official stable AI ^0.11.2.');
+            check($version === '0.27.0', 'Wrong core version for lane.');
+            check($ref === CANDIDATE_REF, 'Wrong core source for lane.');
+        } elseif ($name === 'laravel/ai') {
+            check(Semver::satisfies($version, AI_RANGE), 'Expected official stable AI ^1.0.');
             if ($lane === 'adoption-minimum') {
-                check($version === '0.11.2' && $ref === AI_MINIMUM_REF, 'Expected exact official AI minimum.');
+                check($version === '1.0.0' && $ref === AI_MINIMUM_REF, 'Expected exact official AI minimum.');
             }
         } elseif ($name === 'laravel/framework') {
             check(str_starts_with($version, '13.'), 'Expected Laravel 13.');
@@ -127,7 +108,7 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) {
             $lock = readJson('composer.lock');
             $installed = readJson('vendor/composer/installed.json');
             $evidence = verify(packages(array_merge($lock['packages'], $lock['packages-dev'])), packages($installed['packages']), $lane);
-            echo (! str_starts_with($lane, 'adoption-') ? 'Published dependency lane' : 'Pinned candidate lane; NOT published-installability proof')."\n";
+            echo "Pinned candidate lane; NOT published-installability proof\n";
             echo implode("\n", $evidence)."\n";
         }
     } catch (\Throwable $e) {

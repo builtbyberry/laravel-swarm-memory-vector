@@ -101,3 +101,40 @@ test('under the throw failure policy a failed embedding aborts the whole write',
     // Embedding is computed before the transaction opens, so nothing is written.
     expect(DB::table('swarm_memories')->where('key', 'topic')->count())->toBe(0);
 });
+
+test('an index failure rolls back canonical and vector writes on the same connection', function (string $operation) {
+    app(SwarmMemory::class)->put(MemoryScope::Run, 'run-1', 'topic', 'original');
+    $beforeMemory = (array) DB::table('swarm_memories')->where('key', 'topic')->first();
+    $beforeVector = (array) DB::table('swarm_memory_vectors')->where('key', 'topic')->first();
+    $realIndex = app(VectorIndex::class);
+    $failingIndex = Mockery::mock(VectorIndex::class);
+    if ($operation === 'put') {
+        $failingIndex->shouldReceive('upsert')->once()->andReturnUsing(function ($scope, $scopeId, $key, $embedding) use ($realIndex) {
+            expect(app(DatabaseMemoryStore::class)->get($scope, $scopeId, $key)->value)->toBe('replacement');
+            $realIndex->upsert($scope, $scopeId, $key, $embedding);
+            throw new RuntimeException('index write failed after mutation');
+        });
+    } else {
+        $failingIndex->shouldReceive('forget')->once()->andReturnUsing(function ($scope, $scopeId, $key) use ($realIndex) {
+            expect(DB::table('swarm_memories')->where('key', $key)->exists())->toBeFalse();
+            $realIndex->forget($scope, $scopeId, $key);
+            expect(DB::table('swarm_memory_vectors')->where('key', $key)->exists())->toBeFalse();
+            throw new RuntimeException('index write failed after mutation');
+        });
+    }
+    $store = new VectorMemoryStore(
+        inner: app(DatabaseMemoryStore::class),
+        index: $failingIndex,
+        embedder: app(Embedder::class),
+        connection: DB::connection(),
+        failOnEmbeddingError: true,
+        logger: app(LoggerInterface::class),
+    );
+
+    expect(fn () => $operation === 'put'
+        ? $store->put(new MemoryEntry(MemoryScope::Run, 'run-1', 'topic', 'replacement'))
+        : $store->forget(MemoryScope::Run, 'run-1', 'topic'))
+        ->toThrow(RuntimeException::class, 'index write failed after mutation');
+    expect((array) DB::table('swarm_memories')->where('key', 'topic')->first())->toBe($beforeMemory);
+    expect((array) DB::table('swarm_memory_vectors')->where('key', 'topic')->first())->toBe($beforeVector);
+})->with(['put', 'forget']);

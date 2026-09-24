@@ -30,8 +30,8 @@ composer lint      # Pint (--test); `composer format` to fix
 
 - Tests bind a deterministic `HashEmbedder` (no network). Reader tests enter an `ActiveRunContext` frame with a `FakeSwarm` fixture and `RunContext::fake()`.
 - SQLite enforces foreign keys; `tests/TestCase.php` seeds the parent run-history row for Run-scoped memory.
-- CI runs PHP 8.4 and 8.5 scan lanes for lowest, published core 0.25, and the
-  pinned core 0.26 candidate with minimum/current AI 0.11 dependencies. PHP 8.5
-  also checks published core 0.20–0.24. Native pgvector runs on a real PostgreSQL
-  service on PHP 8.4 for published core 0.25 and both candidate dependency sets.
-  All lanes fail on skipped tests. Candidate CI is not published-installability proof.
+- CI runs PHP 8.4 and 8.5 scan lanes for the pinned core 0.27 candidate with
+  minimum/current official AI 1.x dependencies. Native pgvector runs on a real
+  PostgreSQL service on PHP 8.4 for both dependency sets. All six lanes fail on
+  skipped tests. Version 0.2.0 drops incompatible old core/AI ranges; candidate
+  CI is not published-installability proof.
