@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.2.0 - unreleased
+## v0.2.0 - 2026-09-24
 
 Compatibility with Laravel Swarm v0.27.0 and Laravel AI 1.0.
 
