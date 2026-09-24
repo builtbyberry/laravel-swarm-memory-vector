@@ -6,11 +6,22 @@ Compatibility with Laravel Swarm v0.27.0 and Laravel AI 1.0.
 
 ### Added
 
-_To be filled in during release wrap-up._
+- Native OpenAI/Voyage HTTP fixtures and public memory/search database proofs
+  for response vectors, dimensions, privacy, authorized ranking, failure policy
+  and atomic rollback, with optional provider dependency evidence.
 
 ### Changed
 
-_To be filled in during release wrap-up._
+- **Dependency break:** require Laravel Swarm `^0.27` and Laravel AI `^1.0`.
+  Keep PHP 8.4+ and Laravel 13; the prior incompatible core/AI lines remain on
+  companion 0.1.x. See [UPGRADING.md](UPGRADING.md).
+- Replace old-core CI solves with six minimum/current AI1 candidate lanes across
+  PHP 8.4/8.5 scan and PHP 8.4 native PostgreSQL17/pgvector. The chosen dependency
+  break avoids advertising unsatisfiable old-core support; temporary immutable
+  candidate metadata is used only for verification, never production installs.
+- Keep the text-only embedder, public reader signature, redacting decorator,
+  authorized candidate filtering, database schema and configured dimensions
+  unchanged. No required provider SDK is added.
 
 ## v0.1.4 - 2026-09-21
 
