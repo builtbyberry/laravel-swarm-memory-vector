@@ -7,16 +7,20 @@ Vector-backed semantic recall for [Laravel Swarm](https://github.com/builtbyberr
 ## Requirements
 
 - PHP 8.4+
-- [`builtbyberry/laravel-swarm`](https://github.com/builtbyberry/laravel-swarm) ^0.20 – ^0.26
-- [`laravel/ai`](https://github.com/laravel/ai) ^0.9, ^0.10.3, or ^0.11.2 (for embeddings)
+- [`builtbyberry/laravel-swarm`](https://github.com/builtbyberry/laravel-swarm) ^0.27
+- [`laravel/ai`](https://github.com/laravel/ai) ^1.0 (for embeddings)
 - For the native `pgvector` driver: a PostgreSQL connection with the `vector` extension available
 
-Core 0.26 requires Laravel AI ^0.11.2. Existing core and AI compatibility ranges
-remain supported. CI checks the exact core 0.26 candidate against both the minimum
-and current AI 0.11 release, alongside published core versions. Candidate checks
-use temporary CI metadata and are not proof that core 0.26 or this companion change
-is published. Published installability must be verified separately with a fresh
-Packagist-only consumer installation after release.
+Version 0.2.0 adopts Laravel AI 1.x and core 0.27. Applications on older core/AI
+lines must stay on a compatible 0.1.x companion release until they upgrade both.
+See [UPGRADING.md](UPGRADING.md). The embedding API remains text-only.
+
+The v0.2.0 compatibility work was validated against the exact core 0.27
+candidate with minimum/current official AI 1.x on PHP 8.4/8.5 scan and PHP 8.4
+real PostgreSQL/pgvector. Candidate checks used temporary CI metadata and are
+historical prepublication evidence. A fresh Packagist-only consumer installation
+remains a separate shipping gate. See the
+[compatibility evidence](docs/ai-1-compatibility-evidence.md).
 
 ## Installation
 
@@ -44,6 +48,13 @@ SWARM_MEMORY_VECTOR_DIMENSIONS=1024
 ```
 
 `SWARM_MEMORY_VECTOR_DIMENSIONS` **must** match the vector width your provider/model returns — it fixes the width of the `vector(N)` column. Voyage's `voyage-4` returns 1024; OpenAI's `text-embedding-3-small` returns 1536. A mismatch fails loudly rather than corrupting the index.
+
+Laravel AI's HTTP-backed providers do not require an additional provider SDK.
+Bedrock requires the optional `aws/aws-sdk-php` package; selecting Bedrock without
+it gives installation guidance. Follow the installed Laravel AI package's
+optional-dependency constraints and use a supported, security-patched SDK release.
+This companion does not require AWS SDK or Laravel MCP. Native HTTP-wire tests
+cover OpenAI and Voyage; they do not establish AWS transport compatibility.
 
 ## How it works
 
