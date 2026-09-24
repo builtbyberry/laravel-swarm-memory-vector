@@ -15,10 +15,11 @@ Version 0.2.0 adopts Laravel AI 1.x and core 0.27. Applications on older core/AI
 lines must stay on a compatible 0.1.x companion release until they upgrade both.
 See [UPGRADING.md](UPGRADING.md). The embedding API remains text-only.
 
-CI checks the exact core 0.27 candidate with minimum/current official AI 1.x on
-PHP 8.4/8.5 scan and PHP 8.4 real PostgreSQL/pgvector. Candidate checks use
-temporary CI metadata and do not prove publication. A fresh Packagist-only
-consumer installation is a separate post-release obligation. See the
+The v0.2.0 compatibility work was validated against the exact core 0.27
+candidate with minimum/current official AI 1.x on PHP 8.4/8.5 scan and PHP 8.4
+real PostgreSQL/pgvector. Candidate checks used temporary CI metadata and are
+historical prepublication evidence. A fresh Packagist-only consumer installation
+remains a separate shipping gate. See the
 [compatibility evidence](docs/ai-1-compatibility-evidence.md).
 
 ## Installation
