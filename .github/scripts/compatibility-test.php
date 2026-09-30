@@ -32,17 +32,18 @@ $root = readJson($argv[1] ?? __DIR__.'/../../composer.json');
 $candidate = ['name' => CORE, 'require' => ['laravel/ai' => AI_RANGE]];
 $controls = 0;
 foreach (LANES as $lane) {
+    $core028 = str_contains($lane, '-028');
     $set = packages([
-        package(CORE, '0.27.0', CANDIDATE_REF),
+        package(CORE, $core028 ? '0.28.0' : '0.27.0', $core028 ? CANDIDATE_028_REF : CANDIDATE_REF),
         package('laravel/ai', 'v1.0.0', AI_MINIMUM_REF),
         package('laravel/framework', 'v13.16.0', str_repeat('b', 40)),
     ]);
     $set[CORE]['require']['laravel/ai'] = AI_RANGE;
     verify($set, $set, $lane);
     $prepared = prepare($root, $lane, $candidate);
-    check($prepared['repositories'][0]['package']['source']['reference'] === CANDIDATE_REF, 'Candidate must be immutable.');
-    check($prepared['require']['laravel/ai'] === ($lane === 'adoption-minimum' ? '1.0.0' : AI_RANGE), 'Wrong AI lane pin.');
-    check($prepared['require'][CORE] === '0.27.0', 'Candidate must stay pinned.');
+    check($prepared['repositories'][0]['package']['source']['reference'] === ($core028 ? CANDIDATE_028_REF : CANDIDATE_REF), 'Candidate must be immutable.');
+    check($prepared['require']['laravel/ai'] === (str_ends_with($lane, '-minimum') ? '1.0.0' : AI_RANGE), 'Wrong AI lane pin.');
+    check($prepared['require'][CORE] === ($core028 ? '0.28.0' : '0.27.0'), 'Candidate must stay pinned.');
 
     // Mutate the Composer evidence shape, both independently and in agreement.
     foreach (array_keys($set) as $name) {
@@ -95,7 +96,7 @@ foreach (LANES as $lane) {
         rejects(fn () => verify($bad, $bad, $lane), 'unsupported AI');
         $controls++;
     }
-    if ($lane === 'adoption-current') {
+    if (str_ends_with($lane, '-current')) {
         $bad = $set;
         $bad['laravel/ai']['version'] = '2.0.0';
         $bad[CORE]['require']['laravel/ai'] = '^1.0 || ^2.0';
@@ -106,6 +107,12 @@ foreach (LANES as $lane) {
     $bad[CORE]['version'] = '0.26.3';
     rejects(fn () => verify($bad, $bad, $lane), 'unsupported core');
     $controls++;
+    if ($core028) {
+        $bad = $set;
+        $bad[CORE] = array_replace($set[CORE], package(CORE, '0.27.0', CANDIDATE_REF));
+        rejects(fn () => verify($bad, $bad, $lane), 'previous native core generation');
+        $controls++;
+    }
     $bad = $set;
     $bad[CORE]['require']['laravel/ai'] = '^0.99';
     rejects(fn () => verify($bad, $bad, $lane), 'unsatisfied actual core AI contract');
@@ -116,7 +123,7 @@ foreach (LANES as $lane) {
     rejects(fn () => verify($set, $differentInstalled, $lane), 'valid installed package differs from lock');
     $controls++;
     foreach ([CORE, 'laravel/ai'] as $name) {
-        if ($name === 'laravel/ai' && $lane !== 'adoption-minimum') {
+        if ($name === 'laravel/ai' && ! str_ends_with($lane, '-minimum')) {
             continue;
         }
         $bad = $set;
