@@ -7,17 +7,20 @@ Vector-backed semantic recall for [Laravel Swarm](https://github.com/builtbyberr
 ## Requirements
 
 - PHP 8.4+
-- [`builtbyberry/laravel-swarm`](https://github.com/builtbyberry/laravel-swarm) ^0.27
+- [`builtbyberry/laravel-swarm`](https://github.com/builtbyberry/laravel-swarm) ^0.27 || ^0.28
 - [`laravel/ai`](https://github.com/laravel/ai) ^1.0 (for embeddings)
 - For the native `pgvector` driver: a PostgreSQL connection with the `vector` extension available
 
 Version 0.2.0 adopts Laravel AI 1.x and core 0.27. Applications on older core/AI
 lines must stay on a compatible 0.1.x companion release until they upgrade both.
-See [UPGRADING.md](UPGRADING.md). The embedding API remains text-only.
+See [UPGRADING.md](UPGRADING.md). The embedding API remains text-only. Version
+0.3.0 additionally admits core `^0.28` (native Laravel AI feature access) on the
+same AI 1.x line, with no dependency break.
 
 The v0.2.0 compatibility work was validated against the exact core 0.27
 candidate with minimum/current official AI 1.x on PHP 8.4/8.5 scan and PHP 8.4
-real PostgreSQL/pgvector. Candidate checks used temporary CI metadata and are
+real PostgreSQL/pgvector; v0.3.0 adds the same minimum/current scan and pgvector
+lanes against the frozen core 0.28 candidate `6c3da95`. Candidate checks used temporary CI metadata and are
 historical prepublication evidence. A fresh Packagist-only consumer installation
 remains a separate shipping gate. See the
 [compatibility evidence](docs/ai-1-compatibility-evidence.md).

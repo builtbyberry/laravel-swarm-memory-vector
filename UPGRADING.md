@@ -1,5 +1,14 @@
 # Upgrading
 
+## 0.2.0 to 0.3.0
+
+Version 0.3.0 admits `builtbyberry/laravel-swarm:^0.28` alongside the existing
+`^0.27`, on the same `laravel/ai:^1.0` line. This is additive: there is no
+dependency break, migration, configuration key, or public reader-signature
+change. Core 0.28 adds native Laravel AI feature access through Swarm workflows;
+follow core's own upgrade guide for application changes. No action is required to
+stay on core 0.27.
+
 ## 0.1.x to 0.2.0
 
 Version 0.2.0 requires `builtbyberry/laravel-swarm:^0.27` and `laravel/ai:^1.0`.

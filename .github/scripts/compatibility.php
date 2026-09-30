@@ -8,10 +8,11 @@ use Composer\Semver\Semver;
 
 const CORE = 'builtbyberry/laravel-swarm';
 const CANDIDATE_REF = '48ad4ef690363ca40ba7d3bd50e63e7fbe76ba4b';
+const CANDIDATE_028_REF = '6c3da95fcb3bc89a2ec0096346bd6efb11366cda';
 const AI_MINIMUM_REF = '101c7ea33cd8569d82570f753fbf38e48b7d3d95';
-const CORE_RANGE = '^0.27';
+const CORE_RANGE = '^0.27 || ^0.28';
 const AI_RANGE = '^1.0';
-const LANES = ['adoption-minimum', 'adoption-current'];
+const LANES = ['adoption-minimum', 'adoption-current', 'adoption-028-minimum', 'adoption-028-current'];
 
 function check(bool $condition, string $message): void
 {
@@ -36,14 +37,17 @@ function prepare(array $root, string $lane, ?array $candidate): array
     }
     check(($candidate['name'] ?? null) === CORE, 'Expected the official core candidate manifest.');
     check(($candidate['require']['laravel/ai'] ?? null) === AI_RANGE, 'Unexpected candidate AI contract.');
+    $core028 = str_contains($lane, '-028');
+    $candidateVersion = $core028 ? '0.28.0' : '0.27.0';
+    $candidateRef = $core028 ? CANDIDATE_028_REF : CANDIDATE_REF;
     // This synthetic version is CI-only: the source and archive are immutable.
-    $candidate['version'] = '0.27.0';
-    $candidate['source'] = ['type' => 'git', 'url' => 'https://github.com/builtbyberry/laravel-swarm.git', 'reference' => CANDIDATE_REF];
-    $candidate['dist'] = ['type' => 'zip', 'url' => 'https://api.github.com/repos/builtbyberry/laravel-swarm/zipball/'.CANDIDATE_REF, 'reference' => CANDIDATE_REF];
+    $candidate['version'] = $candidateVersion;
+    $candidate['source'] = ['type' => 'git', 'url' => 'https://github.com/builtbyberry/laravel-swarm.git', 'reference' => $candidateRef];
+    $candidate['dist'] = ['type' => 'zip', 'url' => 'https://api.github.com/repos/builtbyberry/laravel-swarm/zipball/'.$candidateRef, 'reference' => $candidateRef];
     unset($candidate['require-dev'], $candidate['scripts'], $candidate['repositories']);
     $root['repositories'] = [['type' => 'package', 'package' => $candidate]];
-    $root['require'][CORE] = '0.27.0';
-    $root['require']['laravel/ai'] = $lane === 'adoption-minimum' ? '1.0.0' : AI_RANGE;
+    $root['require'][CORE] = $candidateVersion;
+    $root['require']['laravel/ai'] = str_ends_with($lane, '-minimum') ? '1.0.0' : AI_RANGE;
 
     return $root;
 }
@@ -74,11 +78,12 @@ function verify(array $locked, array $installed, string $lane): array
             && ($actual['dist']['reference'] ?? null) === $ref
             && ($actual['dist']['url'] ?? null) === "https://api.github.com/repos/{$repository}/zipball/{$ref}", "{$name}: expected matching official archive.");
         if ($name === CORE) {
-            check($version === '0.27.0', 'Wrong core version for lane.');
-            check($ref === CANDIDATE_REF, 'Wrong core source for lane.');
+            $core028 = str_contains($lane, '-028');
+            check($version === ($core028 ? '0.28.0' : '0.27.0'), 'Wrong core version for lane.');
+            check($ref === ($core028 ? CANDIDATE_028_REF : CANDIDATE_REF), 'Wrong core source for lane.');
         } elseif ($name === 'laravel/ai') {
             check(Semver::satisfies($version, AI_RANGE), 'Expected official stable AI ^1.0.');
-            if ($lane === 'adoption-minimum') {
+            if (str_ends_with($lane, '-minimum')) {
                 check($version === '1.0.0' && $ref === AI_MINIMUM_REF, 'Expected exact official AI minimum.');
             }
         } elseif ($name === 'laravel/framework') {

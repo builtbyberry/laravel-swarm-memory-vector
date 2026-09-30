@@ -66,7 +66,7 @@ The final source has 47 tests; the recorded local evidence is the unchanged
 Symfony translation implicit-nullability deprecation on PHP 8.5; the suite
 passes with no skips/incomplete/risky tests. No upstream code was patched.
 
-[CI](../.github/workflows/tests.yml) now has six meaningful lanes: PHP 8.4/8.5
+[CI](../.github/workflows/tests.yml) at v0.2.0 had six meaningful lanes: PHP 8.4/8.5
 minimum/current scan (four), and PHP 8.4 minimum/current PostgreSQL17 native
 pgvector (two). Old-core lanes were removed because those advertised ranges
 are intentionally dropped and cannot solve with AI 1. All jobs retain
@@ -154,3 +154,24 @@ original advisory refusals, patched solve output and optional metadata.
 The component PR/lifecycle owner attaches that packet and final-head CI/review
 links before merging to `release/v0.2.0`. No main merge, tag or publication is
 included in this component.
+
+## v0.3.0 core 0.28 addendum
+
+Companion v0.3.0 (recorded 2026-09-30) admits core `^0.28` alongside `^0.27` on the
+same Laravel AI 1.x line. This is an additive dependency-compatibility change: no
+production runtime, migration, configuration, public reader signature, or embedder
+change. The production `composer.json` core constraint is `^0.27 || ^0.28`.
+
+- Core 0.28 candidate: `6c3da95fcb3bc89a2ec0096346bd6efb11366cda`
+  (release/v0.28.0 HEAD). CI-only package metadata assigns 0.28.0 to that exact
+  official source/archive. Its `require` block (PHP `^8.4`, `laravel/ai ^1.0`) is
+  byte-identical to the 0.27 candidate, so minimum/current resolution is unchanged.
+- CI adds two `adoption-028` lanes to each job: PHP 8.4/8.5 scan (four) and PHP 8.4
+  real PostgreSQL17/pgvector (two), for twelve meaningful lanes overall. The
+  dependency guard self-test now covers four positive lane models and 282 negative
+  controls, including a discriminating control that rejects a v0.27 core on the
+  v0.28 lane.
+- Local validation on the companion branch: guard self-test, `composer lint`,
+  `composer analyse`, and the 47-test scan suite pass against published core 0.27.0
+  / AI 1.0.1; the core-0.28 install proof is the `adoption-028` CI lanes. Final-head
+  hosted runs and independent review remain required before merge.
