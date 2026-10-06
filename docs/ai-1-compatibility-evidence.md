@@ -162,7 +162,7 @@ same Laravel AI 1.x line. This is an additive dependency-compatibility change: n
 production runtime, migration, configuration, public reader signature, or embedder
 change. The production `composer.json` core constraint is `^0.27 || ^0.28`.
 
-- Core 0.28 candidate: `6c3da95fcb3bc89a2ec0096346bd6efb11366cda`
+- Core 0.28 candidate: `269f749102f8d4c525c12e5486c3f57893d78d6b`
   (release/v0.28.0 HEAD). CI-only package metadata assigns 0.28.0 to that exact
   official source/archive. Its `require` block (PHP `^8.4`, `laravel/ai ^1.0`) is
   byte-identical to the 0.27 candidate, so minimum/current resolution is unchanged.

@@ -6,7 +6,7 @@ Compatibility with Laravel Swarm v0.28.0 (native Laravel AI feature access).
 
 ### Added
 
-- PHP 8.4/8.5 scan and PHP 8.4 real-pgvector `adoption-028` minimum/current compatibility lanes pinning the frozen v0.28 core candidate `6c3da95` on the same Laravel AI 1.x line, alongside the v0.27 lanes. Adds a discriminating control that rejects a v0.27 core on the v0.28 lane.
+- PHP 8.4/8.5 scan and PHP 8.4 real-pgvector `adoption-028` minimum/current compatibility lanes pinning the frozen v0.28 core candidate `269f749` on the same Laravel AI 1.x line, alongside the v0.27 lanes. Adds a discriminating control that rejects a v0.27 core on the v0.28 lane.
 
 ### Changed
 

@@ -20,7 +20,7 @@ same AI 1.x line, with no dependency break.
 The v0.2.0 compatibility work was validated against the exact core 0.27
 candidate with minimum/current official AI 1.x on PHP 8.4/8.5 scan and PHP 8.4
 real PostgreSQL/pgvector; v0.3.0 adds the same minimum/current scan and pgvector
-lanes against the frozen core 0.28 candidate `6c3da95`. Candidate checks used temporary CI metadata and are
+lanes against the frozen core 0.28 candidate `269f749`. Candidate checks used temporary CI metadata and are
 historical prepublication evidence. A fresh Packagist-only consumer installation
 remains a separate shipping gate. See the
 [compatibility evidence](docs/ai-1-compatibility-evidence.md).
